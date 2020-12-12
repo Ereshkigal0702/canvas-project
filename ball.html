@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid black;
+        }
+
+        .fixed {
+            height: 200px;
+            width: 120px;
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translate(0, -50%);
+            border: 1px solid black;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        #button_container>div:hover {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            background-color: #e7e7e7;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="button_container" class="fixed">
+        <div id="begin">开始</div>
+        <div id="end">结束</div>
+        <div id="reset">重置</div>
+        <div id="reverse">倒退</div>
+    </div>
+    <canvas id="canvas">升级个浏览器吧，求求你了!</canvas>
+</body>
+<script>
+    //获取上下文环境
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+
+    //设置canvas高度
+    canvas.width = 1000;
+    canvas.height = 1000;
+
+    //设置全局变量
+    const RADIUS = 5;
+    const SPACE = 2;
+    const BETWEEN_SPACE = 201;
+
+    //设置全局变量，用于记录1000个小球的状态
+    let balls = [];
+
+    //记录定时器
+    let timer = null;
+
+    //初始化小球
+    function initBalls() {
+        //随机为小球填一种颜色
+        function generateColor() {
+            const colorlist = ['#185782', '#B7ECCE', '#96619F', '#CC4F79', '#DF7275', '#4EABEC', '#80240d', '#F5C8A9'];
+            return colorlist[Math.floor(colorlist.length * Math.random())];
+        }
+
+        //随机生成速度
+        function generateSpeed() {
+            return Math.pow(-1, Math.round(10 * Math.random())) * (Math.round(10 * Math.random()) + 1);
+        }
+        balls.length ? balls = [] : null;
+        //绘制1000个小球,50*20，且间距为2,
+        for (let i = 0; i < 20; i++) {
+            //绘制小球
+            for (let j = 0; j < 50; j++) {
+                let obj = {
+                    x: BETWEEN_SPACE + RADIUS + 2 * j * (RADIUS + 1),
+                    y: BETWEEN_SPACE + RADIUS + 2 * i * (RADIUS + 1),
+                    vx: generateSpeed(),
+                    vy: generateSpeed(),
+                    color: generateColor()
+                }
+                balls.push(obj);
+            }
+        }
+    };
+
+    initBalls();
+
+    window.onload = function () {
+        render();
+        getCurrentStatus();
+    }
+
+    function getCurrentStatus() {
+        for (let item of balls) {
+            if (item.x + item.vx > canvas.width) {
+                item.x = canvas.width - RADIUS;
+                item.vx = -item.vx;
+            }
+            else if (item.x + item.vx < 0) {
+                item.x = RADIUS;
+                item.vx = -item.vx;
+            }
+            else {
+                item.x = item.x + item.vx;
+            }
+            if (item.y + item.vy > canvas.height) {
+                item.y = canvas.height - RADIUS;
+                item.vy = -item.vy;
+            }
+            else if (item.y + item.vy < 0) {
+                item.y = RADIUS;
+                item.vy = -item.vy;
+            }
+            else {
+                item.y = item.y + item.vy;
+            }
+        }
+    }
+
+    //绘制小球
+    //每次绘制新的状态时，要先清空画布，再进行绘制，否则旧的球也会显示出来
+    // 三种清空画布的方法
+    // 1、 重新设置画布的宽或高
+    // 2、 context.clearRect(0,0,width,height)
+    // 3、 在上面盖一层，fillStyle="#000000",继续向画布绘画
+    function render() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        balls.forEach(item => {
+            drawABall(item.x, item.y, item.color);
+        })
+    }
+
+    //绘制原点不同半径为5的小球
+    function drawABall(pointX, pointY, color) {
+        context.beginPath();
+        context.arc(pointX, pointY, RADIUS, 0, 2 * Math.PI);
+        context.fillStyle = color;
+        context.fill();
+    }
+
+    //点击开始的方法
+    document.getElementById('begin').onclick = () => {
+        if (timer) return;
+        timer = setInterval(() => {
+            render();
+            getCurrentStatus();
+        }, 15)
+    }
+
+    //点击结束的方法
+    document.getElementById('end').onclick = () => {
+        if (!timer) return;
+        clearInterval(timer);
+        timer = null;
+    }
+
+    //点击重置的方法
+    document.getElementById('reset').onclick = () => {
+        if (timer) clearInterval(timer);
+        timer = null;
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        initBalls();
+        render();
+    }
+
+    //点击倒转的方法
+    document.getElementById('reverse').onclick = () => {
+        balls = balls.map(item => {
+            item.vx = -item.vx;
+            item.vy = -item.vy;
+            return item;
+        })
+        if (!timer) {
+            timer = setInterval(() => {
+                render();
+                getCurrentStatus();
+            },15)
+        }
+    }
+</script>
+
+</html>
